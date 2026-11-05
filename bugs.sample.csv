@@ -1,0 +1,6 @@
+key,summary,description,issue_type,priority,status,component,created
+ANIME-1,Canvas lags on undo,"Sample data. Undo takes over a second after about 50 strokes. Expected: instant.",Bug,High,To Do,Drawing canvas,2026-11-04
+ANIME-2,App crashes when saving a blank drawing,"Sample data. Open a new drawing and tap Save with no strokes. Expected: saves or shows a message.",Bug,Highest,To Do,Save and export,2026-11-04
+ANIME-3,Lesson text clips at largest Dynamic Type,"Sample data. Set the largest text size. Lesson titles are cut off.",Bug,Medium,To Do,Lessons,2026-11-04
+ANIME-4,Add an empty state to the gallery,"Sample data. The gallery shows a blank screen before the first drawing is saved.",Improvement,Medium,In Progress,Gallery,2026-11-04
+ANIME-5,Pencil tool icon is low contrast in dark mode,"Sample data. The selected state is hard to see.",Improvement,Low,To Do,Drawing canvas,2026-11-04
