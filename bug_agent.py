@@ -22,6 +22,7 @@ import anthropic
 
 MODEL = "claude-sonnet-5-5"
 MAX_TURNS = 10  # model calls per request; stops a model that never stops asking for tools
+MAX_TOKENS = 16000  # per response; you only pay for tokens actually generated
 SYSTEM_PROMPT = (
     "You manage the Anime 101 issue tracker. When you add an issue, the summary "
     "and description must contain only what the user told you. Don't invent "
@@ -196,15 +197,20 @@ def run_agent(user_message: str) -> None:
     for _ in range(MAX_TURNS):
         response = client.messages.create(
             model=MODEL,
-            max_tokens=1024,
+            max_tokens=MAX_TOKENS,
             system=SYSTEM_PROMPT,
             tools=tools,
             messages=messages,
         )
         messages.append({"role": "assistant", "content": response.content})
 
+        text = "".join(b.text for b in response.content if b.type == "text")
+        if response.stop_reason == "end_turn":
+            print(text)
+            return
         if response.stop_reason != "tool_use":
-            print("".join(b.text for b in response.content if b.type == "text"))
+            # max_tokens, refusal, etc.: not a finished answer, and any tool call may be cut off.
+            print(f"Stopped early ({response.stop_reason}): {text}")
             return
 
         tool_results = []

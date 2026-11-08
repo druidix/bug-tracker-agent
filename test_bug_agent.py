@@ -94,8 +94,8 @@ def tool_call(name, **tool_input):
     return SimpleNamespace(stop_reason="tool_use", content=[block])
 
 
-def final(text="done"):
-    return SimpleNamespace(stop_reason="end_turn", content=[SimpleNamespace(type="text", text=text)])
+def final(text="done", stop_reason="end_turn"):
+    return SimpleNamespace(stop_reason=stop_reason, content=[SimpleNamespace(type="text", text=text)])
 
 
 def run_with(monkeypatch, next_response):
@@ -138,3 +138,26 @@ def test_loop_stops_at_the_cap(monkeypatch, capsys):
     calls = run_with(monkeypatch, lambda n: tool_call("list_bugs"))
     assert len(calls) == bug_agent.MAX_TURNS
     assert "Stopped after" in capsys.readouterr().out
+
+
+def test_end_turn_prints_the_answer(monkeypatch, capsys):
+    calls = run_with(monkeypatch, lambda n: final("All clear"))
+    assert capsys.readouterr().out == "All clear\n"
+    assert calls[0]["max_tokens"] == bug_agent.MAX_TOKENS == 16000
+
+
+@pytest.mark.parametrize("stop_reason", ["max_tokens", "refusal", "pause_turn"])
+def test_any_other_stop_reason_is_reported_as_stopped_early(monkeypatch, capsys, stop_reason):
+    calls = run_with(monkeypatch, lambda n: final("Partial answ", stop_reason))
+    assert capsys.readouterr().out == f"Stopped early ({stop_reason}): Partial answ\n"
+    assert len(calls) == 1
+
+
+def test_cut_off_response_does_not_run_its_tool_call(monkeypatch, capsys, bugs_file):
+    cut_off = tool_call("add_bug", summary="Crash", description="Ste", issue_type="Bug",
+                        priority="High", component="Canvas")
+    cut_off.stop_reason = "max_tokens"
+    calls = run_with(monkeypatch, lambda n: cut_off)
+    assert len(calls) == 1
+    assert not bugs_file.exists()
+    assert "Stopped early (max_tokens)" in capsys.readouterr().out
