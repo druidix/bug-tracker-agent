@@ -7,13 +7,14 @@ from types import SimpleNamespace
 import pytest
 
 import bug_agent
-from bug_agent import add_bug, list_bugs, summarize_bugs
+import tracker
+from tracker import add_bug, list_bugs, summarize_bugs
 
 
 @pytest.fixture(autouse=True)
 def bugs_file(tmp_path, monkeypatch):
     path = tmp_path / "bugs.csv"
-    monkeypatch.setattr(bug_agent, "BUGS_CSV", path)
+    monkeypatch.setattr(tracker, "BUGS_CSV", path)
     return path
 
 
@@ -30,7 +31,7 @@ def test_add_creates_file_and_sets_code_owned_fields(bugs_file):
     [bug] = json.loads(list_bugs())
     assert bug["status"] == "To Do"
     assert bug["created"] == date.today().isoformat()
-    assert list(bug) == bug_agent.COLUMNS
+    assert list(bug) == tracker.COLUMNS
 
 
 def test_keys_increment_and_survive_a_deleted_row(bugs_file):
@@ -38,7 +39,7 @@ def test_keys_increment_and_survive_a_deleted_row(bugs_file):
     with bugs_file.open(newline="") as f:
         rows = list(csv.DictReader(f))
     with bugs_file.open("w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=bug_agent.COLUMNS)
+        writer = csv.DictWriter(f, fieldnames=tracker.COLUMNS)
         writer.writeheader()
         writer.writerows([rows[0], rows[2]])  # delete ANIME-2
     assert add() == "Created ANIME-4"
